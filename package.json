@@ -1,0 +1,57 @@
+{
+  "name": "rdkit_cli",
+  "version": "0.1.0",
+  "description": "Agent-first cheminformatics CLI using Node.js + RDKit WASM",
+  "license": "MIT",
+  "main": "src/index.js",
+  "bin": {
+    "rdkit_cli": "bin/rdkit_cli.js"
+  },
+  "scripts": {
+    "test": "jest --testPathPattern='test/'",
+    "test:unit": "jest --testPathPattern='test/unit/'",
+    "test:integration": "jest --testPathPattern='test/integration/'",
+    "start": "node bin/rdkit_cli.js"
+  },
+  "dependencies": {
+    "@rdkit/rdkit": "^2025.3.4-1.0.0",
+    "chalk": "^4.1.2",
+    "minimist": "^1.2.8"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/test/**/*.test.js"
+    ]
+  },
+  "keywords": [
+    "cheminformatics",
+    "rdkit",
+    "smiles",
+    "chemistry",
+    "cli",
+    "wasm"
+  ],
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "data/",
+    "README.md",
+    "SKILL.md"
+  ],
+  "author": "Scott Reed",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/scottreed/rdkit-cli.git"
+  },
+  "homepage": "https://github.com/scottreed/rdkit-cli#readme",
+  "bugs": {
+    "url": "https://github.com/scottreed/rdkit-cli/issues"
+  }
+}
