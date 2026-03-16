@@ -54,21 +54,18 @@ async function subsearch(args) {
       return { error: `Invalid SMARTS query: ${query}` };
     }
 
-    const matches = [];
-    const nonmatches = [];
-
-    for (let i = 0; i < targets.length; i++) {
-      const target = targets[i];
+    // Process targets in parallel. qmol is read-only (used only for matching) so
+    // sharing it across concurrent iterations is safe with the single-threaded WASM module.
+    // Promise.all completes before the outer finally block deletes qmol.
+    const targetResults = await Promise.all(targets.map(async (target, i) => {
       let mol = null;
-
       try {
         const h = harden(target, 'smiles');
         const molInput = h.error ? target : h.value;
         mol = RDKit.get_mol(molInput);
 
         if (!mol || !mol.is_valid()) {
-          nonmatches.push({ index: i, smiles: target, error: 'Invalid molecule', matched: false });
-          continue;
+          return { index: i, smiles: target, error: 'Invalid molecule', matched: false };
         }
 
         const matchResult = mol.get_substruct_match(qmol);
@@ -76,25 +73,23 @@ async function subsearch(args) {
 
         if (matched) {
           let matchDetails = null;
-          try {
-            matchDetails = JSON.parse(matchResult);
-          } catch (_) {}
-          matches.push({
+          try { matchDetails = JSON.parse(matchResult); } catch (_) {}
+          return {
             index: i,
             smiles: target,
             canonical_smiles: mol.get_smiles(),
             matched: true,
             match_atoms: matchDetails
-          });
-        } else {
-          nonmatches.push({ index: i, smiles: target, matched: false });
+          };
         }
+        return { index: i, smiles: target, matched: false };
       } finally {
-        if (mol) {
-          try { mol.delete(); } catch (_) {}
-        }
+        if (mol) { try { mol.delete(); } catch (_) {} }
       }
-    }
+    }));
+
+    const matches = targetResults.filter(r => r.matched);
+    const nonmatches = targetResults.filter(r => !r.matched);
 
     return {
       query,

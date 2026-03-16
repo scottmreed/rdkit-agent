@@ -5,16 +5,6 @@ const fs = require('fs');
 const { getRDKit } = require('../wasm');
 const { harden } = require('../hardening');
 
-let RAW_FG_PATTERNS;
-try {
-  RAW_FG_PATTERNS = JSON.parse(
-    fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'fg_patterns.json'), 'utf8')
-  );
-} catch (e) {
-  RAW_FG_PATTERNS = [];
-  console.error('Warning: Could not load fg_patterns.json:', e.message);
-}
-
 function normalizeFGPatterns(rawPatterns) {
   if (!Array.isArray(rawPatterns)) return [];
 
@@ -45,7 +35,23 @@ function normalizeFGPatterns(rawPatterns) {
     .map(({ _index, ...entry }) => entry);
 }
 
-const FG_PATTERNS = normalizeFGPatterns(RAW_FG_PATTERNS);
+// fg_patterns.json is loaded on first use so commands that don't call detectFG never
+// pay the readFileSync + normalization cost at module load time.
+let _fgPatterns = null;
+function getFGPatterns() {
+  if (_fgPatterns) return _fgPatterns;
+  let raw;
+  try {
+    raw = JSON.parse(
+      fs.readFileSync(path.join(__dirname, '..', '..', 'data', 'fg_patterns.json'), 'utf8')
+    );
+  } catch (e) {
+    console.error('Warning: Could not load fg_patterns.json:', e.message);
+    raw = [];
+  }
+  _fgPatterns = normalizeFGPatterns(raw);
+  return _fgPatterns;
+}
 
 function parseMatches(matchesJson) {
   if (!matchesJson || matchesJson === '[]') return [];
@@ -90,11 +96,12 @@ async function detectFG(smiles) {
       return { smiles, error: 'Invalid molecule', functional_groups: [] };
     }
 
+    const fgPatterns = getFGPatterns();
     const found = [];
     const claimedAtoms = new Set();
     const invalidPatterns = [];
 
-    for (const pattern of FG_PATTERNS) {
+    for (const pattern of fgPatterns) {
       const acceptedMatches = [];
       const seenAtomSets = new Set();
 
@@ -149,7 +156,7 @@ async function detectFG(smiles) {
       count: found.length,
       diagnostics: {
         backend: 'tiered_consuming_smarts_v1',
-        patterns_total: FG_PATTERNS.length,
+        patterns_total: fgPatterns.length,
         invalid_patterns: invalidPatterns,
       },
     };
@@ -194,4 +201,9 @@ async function fg(args) {
   return { count: results.length, results };
 }
 
-module.exports = { fg, detectFG, FG_PATTERNS, normalizeFGPatterns };
+module.exports = {
+  fg,
+  detectFG,
+  normalizeFGPatterns,
+  get FG_PATTERNS() { return getFGPatterns(); }
+};

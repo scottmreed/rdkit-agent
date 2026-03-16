@@ -9,12 +9,18 @@ const { detectFG } = require('./fg');
 
 const CHECKMOL_CSV_PATH = path.join(__dirname, '..', '..', 'data', 'checkmol_smarts_part1.csv');
 
-let RAW_CHECKMOL_PATTERNS = [];
-try {
-  const csvText = fs.readFileSync(CHECKMOL_CSV_PATH, 'utf8');
-  RAW_CHECKMOL_PATTERNS = loadCheckmolPatterns(csvText);
-} catch (_) {
-  RAW_CHECKMOL_PATTERNS = [];
+// checkmol_smarts_part1.csv is loaded on first use so commands that don't call
+// repair-smiles never pay the readFileSync + parse cost at module load time.
+let _checkmolPatterns = null;
+function getCheckmolPatterns() {
+  if (_checkmolPatterns) return _checkmolPatterns;
+  try {
+    const csvText = fs.readFileSync(CHECKMOL_CSV_PATH, 'utf8');
+    _checkmolPatterns = loadCheckmolPatterns(csvText);
+  } catch (_) {
+    _checkmolPatterns = [];
+  }
+  return _checkmolPatterns;
 }
 
 function parseCheckmolLine(line) {
@@ -202,10 +208,11 @@ function scoreCandidate(candidate, intent) {
 }
 
 async function detectCheckmolGroups(mol, RDKit) {
-  if (!RAW_CHECKMOL_PATTERNS.length) return [];
+  const checkmolPatterns = getCheckmolPatterns();
+  if (!checkmolPatterns.length) return [];
   const found = [];
 
-  for (const entry of RAW_CHECKMOL_PATTERNS) {
+  for (const entry of checkmolPatterns) {
     let matched = false;
     for (const smarts of entry.smarts) {
       let qmol = null;

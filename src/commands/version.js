@@ -3,7 +3,27 @@
 const path = require('path');
 
 /**
- * Version command
+ * Read the @rdkit/rdkit npm package version from disk (no WASM init).
+ */
+function readRdkitNpmVersion() {
+  try {
+    const rdkitPkg = require(path.join(require.resolve('@rdkit/rdkit'), '..', '..', 'package.json'));
+    return rdkitPkg.version;
+  } catch (e) {
+    try {
+      const rdkitPkg = require(path.join(require.resolve('rdkit-js'), '..', '..', 'package.json'));
+      return rdkitPkg.version;
+    } catch (_) {
+      return 'unknown';
+    }
+  }
+}
+
+/**
+ * Version command.
+ *
+ * --full  Also loads the RDKit WASM module to report its runtime version.
+ *         Without --full, WASM is never initialised so the command is instant.
  */
 async function version(args) {
   let pkg;
@@ -13,6 +33,20 @@ async function version(args) {
     pkg = { version: '0.1.0' };
   }
 
+  const rdkitNpmVersion = readRdkitNpmVersion();
+
+  // Fast path: skip WASM entirely unless --full is requested.
+  if (!args || !args.full) {
+    return {
+      rdkit_cli: pkg.version,
+      rdkit_js: rdkitNpmVersion,
+      node: process.version,
+      platform: process.platform,
+      arch: process.arch
+    };
+  }
+
+  // Full path: load WASM to get the runtime version string.
   let rdkitVersion = 'unknown';
   let rdkitStatus = 'unknown';
 
@@ -28,18 +62,6 @@ async function version(args) {
   } catch (e) {
     rdkitVersion = 'not available';
     rdkitStatus = e.code === 'RDKIT_NOT_INSTALLED' ? 'not installed' : 'error';
-  }
-
-  // Get @rdkit/rdkit package version
-  let rdkitNpmVersion = 'unknown';
-  try {
-    const rdkitPkg = require(path.join(require.resolve('@rdkit/rdkit'), '..', '..', 'package.json'));
-    rdkitNpmVersion = rdkitPkg.version;
-  } catch (e) {
-    try {
-      const rdkitPkg = require(path.join(require.resolve('rdkit-js'), '..', '..', 'package.json'));
-      rdkitNpmVersion = rdkitPkg.version;
-    } catch (_) {}
   }
 
   return {

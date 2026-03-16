@@ -17,6 +17,10 @@ const { draw } = require('../commands/draw');
 const { stats } = require('../commands/stats');
 const { edit } = require('../commands/edit');
 const { rings } = require('../commands/rings');
+const { react } = require('../commands/react');
+const { stereo } = require('../commands/stereo');
+const { tautomers } = require('../commands/tautomers');
+const { atomMap } = require('../commands/atom-map');
 const { version } = require('../commands/version');
 
 // MCP Tool definitions
@@ -194,6 +198,58 @@ const MCP_TOOLS = [
     name: 'get_version',
     description: 'Get version information',
     inputSchema: { type: 'object', properties: {} }
+  },
+  {
+    name: 'apply_reaction',
+    description: 'Apply a reaction SMIRKS to one or more reactant SMILES and return product SMILES. ' +
+      'Returns NOT_SUPPORTED_IN_WASM if the WASM build lacks reaction support.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        smirks: { type: 'string', description: 'Reaction SMIRKS e.g. "[C:1][OH]>>[C:1]Br"' },
+        reactants: { type: 'array', items: { type: 'string' }, description: 'Reactant SMILES list' }
+      },
+      required: ['smirks', 'reactants']
+    }
+  },
+  {
+    name: 'analyze_stereochemistry',
+    description: 'Analyse stereocenters (tetrahedral + E/Z) in a molecule',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        smiles: { type: 'string' },
+        molecules: { type: 'array', items: { type: 'string' } }
+      },
+      required: ['smiles']
+    }
+  },
+  {
+    name: 'enumerate_tautomers',
+    description: 'Enumerate tautomers of a molecule. ' +
+      'Returns NOT_SUPPORTED_IN_WASM if TautomerEnumerator is not in the current WASM build.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        smiles: { type: 'string' },
+        limit: { type: 'integer', default: 10 }
+      },
+      required: ['smiles']
+    }
+  },
+  {
+    name: 'atom_map_tool',
+    description: 'Add, remove, check, or list atom mapping numbers. ' +
+      'Subcommands: add | remove | check | list',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        subcommand: { type: 'string', enum: ['add', 'remove', 'check', 'list'] },
+        smiles: { type: 'string' },
+        smirks: { type: 'string' }
+      },
+      required: ['subcommand']
+    }
   }
 ];
 
@@ -220,6 +276,10 @@ async function dispatchMcpTool(name, input) {
     case 'edit_molecule': return edit(args);
     case 'analyze_rings': return rings(args);
     case 'get_version': return version(args);
+    case 'apply_reaction': return react(args);
+    case 'analyze_stereochemistry': return stereo(args);
+    case 'enumerate_tautomers': return tautomers(args);
+    case 'atom_map_tool': return atomMap(args);
     default:
       throw new Error(`Unknown tool: ${name}`);
   }

@@ -20,6 +20,10 @@ const commands = {
   stats: () => require('./commands/stats').stats,
   edit: () => require('./commands/edit').edit,
   rings: () => require('./commands/rings').rings,
+  react: () => require('./commands/react').react,
+  stereo: () => require('./commands/stereo').stereo,
+  tautomers: () => require('./commands/tautomers').tautomers,
+  'atom-map': () => require('./commands/atom-map').atomMap,
   schema: () => require('./commands/schema-cmd').schemaCmd,
   version: () => require('./commands/version').version,
   plugin: () => require('./commands/plugin').plugin,
@@ -35,11 +39,13 @@ const GLOBAL_FLAGS = {
   boolean: [
     'json-output', 'dry-run', 'strict', 'quiet', 'help', 'h', 'version', 'v', 'lipinski', 'ro5', 'generic', 'include-all',
     'state-progress', 'mechanism-step', 'unchanged-starting-materials-detected', 'resulting-state-changed',
+    'full', 'enumerate',
   ],
   string: [
     'output', 'fields', 'format', 'limit', 'smiles', 'smirks', 'from', 'to', 'query', 'targets', 'reactants', 'products',
     'input', 'operation', 'type', 'radius', 'nbits', 'threshold', 'top', 'width', 'height', 'file', 'command',
     'package', 'subcommand', 'molecules', 'dbe', 'current-state', 'resulting-state', 'max-candidates',
+    'highlight-atoms', 'highlight-bonds', 'highlight-radius',
   ],
   alias: {
     h: 'help',
@@ -68,10 +74,14 @@ Commands:
   similarity    Tanimoto similarity search
   scaffold      Extract Murcko scaffold
   filter        Filter molecules by descriptor ranges
-  draw          Render molecule to SVG/PNG
+  draw          Render molecule to SVG/PNG (supports --highlight-atoms / --highlight-bonds)
   stats         Dataset statistics
   edit          Molecular transformations (neutralize, sanitize, add-h, ...)
   rings         Ring system analysis
+  react         Apply a reaction SMIRKS to reactant SMILES → product SMILES
+  stereo        Analyse stereocenters (tetrahedral & E/Z); --enumerate flag
+  tautomers     Enumerate tautomers of a molecule (WASM limitation: see README)
+  atom-map      Atom mapping sub-commands: add | remove | check | list
   schema        Dump JSON Schema for a command
   version       Show version information
   plugin        Plugin management
@@ -92,15 +102,20 @@ Examples:
   rdkit_cli check --smiles "c1ccccc1"
   rdkit_cli check --smiles "benzene"   # Will correct alias
   rdkit_cli check --smirks "[CH3:1][Br:2]>>[CH3:1][Cl:3] |mech:v1;lp:3>1;sigma:1-2>2|"
-  rdkit_cli check --dbe "1-2:+2;1-1:-2"
-  rdkit_cli check --state-progress --current-state "CCO,[Cl-]" --resulting-state "CCCl,[OH-]"
-  rdkit_cli check --mechanism-step --current-state "CCBr,[Cl-]" --resulting-state "CCCl,[Br-]" --dbe "2-3:-2;2-4:+2"
   rdkit_cli repair-smiles --input "C1CC"
   rdkit_cli descriptors --smiles "CCO"
   rdkit_cli convert --from smiles --to inchi --input "CCO"
   rdkit_cli similarity --query "c1ccccc1" --targets "Cc1ccccc1,c1ccc2ccccc2c1" --threshold 0.5
   rdkit_cli filter --smiles "CCO,CC(C)=O" --mw-max 500 --logp-max 5
   rdkit_cli draw --smiles "c1ccccc1" --output benzene.svg
+  rdkit_cli draw --smiles "c1ccccc1" --highlight-atoms '{"0":"#ff0000","1":"#ff0000"}'
+  rdkit_cli react --smirks "[C:1][OH]>>[C:1]Br" --reactants "CCO,CCCO"
+  rdkit_cli stereo --smiles "CC(O)C(N)C"
+  rdkit_cli tautomers --smiles "OC1=CC=CC=C1" --limit 10
+  rdkit_cli atom-map list --smiles "[CH3:1][CH2:2][OH:3]"
+  rdkit_cli atom-map add --smiles "CCO"
+  rdkit_cli atom-map remove --smiles "[CH3:1][CH2:2][OH:3]"
+  rdkit_cli atom-map check --smirks "[C:1][OH:2]>>[C:1]Br"
   echo '{"smiles":"CCO"}' | rdkit_cli descriptors --json -
 
 Exit codes:
@@ -184,6 +199,13 @@ async function main(argv) {
     return 2;
   }
 
+  // Preload RDKit WASM in the background while we do arg parsing / stdin reading.
+  // Commands that never touch RDKit are excluded so we don't pay init for them.
+  const NO_RDKIT_COMMANDS = ['version', 'schema', 'plugin'];
+  if (!NO_RDKIT_COMMANDS.includes(commandName)) {
+    require('./wasm').getRDKit().catch(() => {});
+  }
+
   // Remove the command name from args._
   args._ = args._.slice(1);
 
@@ -261,6 +283,9 @@ async function main(argv) {
     if (e.code === 'RDKIT_NOT_INSTALLED' || e.code === 'RDKIT_WASM_ERROR') {
       printError(`RDKit error: ${e.message}`, { format: outputFormat });
       exitCode = 3;
+    } else if (e.code === 'NOT_SUPPORTED_IN_WASM') {
+      printOutput({ error: e.message, code: e.code }, outputOptions);
+      exitCode = 2;
     } else {
       printError(`Unexpected error: ${e.message}\n${e.stack || ''}`, { format: outputFormat });
       exitCode = 1;
@@ -270,4 +295,4 @@ async function main(argv) {
   return exitCode;
 }
 
-module.exports = { main };
+module.exports = { main, commands };

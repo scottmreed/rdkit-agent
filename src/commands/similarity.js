@@ -4,6 +4,23 @@ const { getRDKit } = require('../wasm');
 const { harden } = require('../hardening');
 
 /**
+ * Run fn over arr with at most `concurrency` items in-flight at once.
+ * Preserves input order in the returned array.
+ */
+async function parallelMap(arr, fn, concurrency) {
+  const results = new Array(arr.length);
+  let next = 0;
+  async function worker() {
+    while (next < arr.length) {
+      const i = next++;
+      results[i] = await fn(arr[i], i);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, arr.length) }, worker));
+  return results;
+}
+
+/**
  * Compute Tanimoto similarity between two fingerprint bit strings
  */
 function tanimoto(fp1, fp2) {
@@ -86,44 +103,34 @@ async function similarity(args) {
     }
   }
 
-  // Process targets
-  const results = [];
-
-  for (let i = 0; i < targetSmiles.length; i++) {
-    const smi = targetSmiles[i];
+  // Process targets in parallel. WASM is single-threaded so there is no true CPU
+  // parallelism, but Promise.all avoids re-entering the event loop between targets
+  // and keeps the pattern consistent with other multi-molecule commands.
+  // A concurrency cap avoids creating thousands of live mol objects for large lists.
+  const CONCURRENCY = 16;
+  const results = await parallelMap(targetSmiles, async (smi, i) => {
     const h = harden(smi, 'smiles');
-    if (h.error) {
-      results.push({ smiles: smi, similarity: 0, error: h.error });
-      continue;
-    }
+    if (h.error) return { smiles: smi, similarity: 0, error: h.error };
 
     let mol = null;
     try {
       mol = RDKit.get_mol(h.value);
-      if (!mol || !mol.is_valid()) {
-        results.push({ smiles: smi, similarity: 0, error: 'Invalid molecule' });
-        continue;
-      }
+      if (!mol || !mol.is_valid()) return { smiles: smi, similarity: 0, error: 'Invalid molecule' };
 
       const fp = await getMorganFP(mol, nbits, radius);
-      if (!fp) {
-        results.push({ smiles: smi, similarity: 0, error: 'Failed to generate fingerprint' });
-        continue;
-      }
+      if (!fp) return { smiles: smi, similarity: 0, error: 'Failed to generate fingerprint' };
 
       const sim = tanimoto(queryFP, fp);
-      results.push({
+      return {
         index: i,
         smiles: smi,
         canonical_smiles: mol.get_smiles(),
         similarity: Math.round(sim * 10000) / 10000
-      });
+      };
     } finally {
-      if (mol) {
-        try { mol.delete(); } catch (_) {}
-      }
+      if (mol) { try { mol.delete(); } catch (_) {} }
     }
-  }
+  }, CONCURRENCY);
 
   // Sort by similarity descending
   results.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));

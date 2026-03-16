@@ -1,17 +1,21 @@
 {
-  "name": "rdkit_cli",
+  "name": "rdkit-agent",
   "version": "0.1.0",
   "description": "Agent-first cheminformatics CLI using Node.js + RDKit WASM",
   "license": "MIT",
   "main": "src/index.js",
   "bin": {
-    "rdkit_cli": "bin/rdkit_cli.js"
+    "rdkit-agent": "bin/rdkit_cli.js",
+    "rdkit-daemon": "bin/rdkit_daemon.js"
   },
   "scripts": {
     "test": "jest --testPathPattern='test/'",
     "test:unit": "jest --testPathPattern='test/unit/'",
     "test:integration": "jest --testPathPattern='test/integration/'",
-    "start": "node bin/rdkit_cli.js"
+    "start": "node bin/rdkit_cli.js",
+    "agent": "node bin/rdkit_cli.js",
+    "benchmark": "node scripts/benchmark.js",
+    "daemon": "node bin/rdkit_daemon.js"
   },
   "dependencies": {
     "@rdkit/rdkit": "^2025.3.4-1.0.0",
@@ -42,16 +46,17 @@
     "bin/",
     "src/",
     "data/",
+    "scripts/",
     "README.md",
     "SKILL.md"
   ],
   "author": "Scott Reed",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/scottreed/rdkit-cli.git"
+    "url": "git+https://github.com/scottmreed/rdkit-agent.git"
   },
-  "homepage": "https://github.com/scottreed/rdkit-cli#readme",
+  "homepage": "https://github.com/scottmreed/rdkit-agent#readme",
   "bugs": {
-    "url": "https://github.com/scottreed/rdkit-cli/issues"
+    "url": "https://github.com/scottmreed/rdkit-agent/issues"
   }
 }

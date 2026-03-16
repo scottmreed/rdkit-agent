@@ -43,10 +43,14 @@ Output is JSON when stdout is not a terminal (piped/redirected). Pass `--output 
 | `similarity` | Tanimoto similarity search |
 | `scaffold` | Extract Murcko scaffold |
 | `filter` | Filter molecules by descriptor ranges (Lipinski Ro5, etc.) |
-| `draw` | Render molecule to SVG |
+| `draw` | Render molecule to SVG/PNG with optional atom/bond highlighting |
 | `stats` | Dataset statistics across descriptors |
 | `edit` | Molecular transformations (neutralize, sanitize, add-h, etc.) |
 | `rings` | Ring analysis (count, aromaticity, spiro atoms) |
+| `react` | Apply a reaction SMIRKS to reactant SMILES → product SMILES |
+| `stereo` | Stereocentre analysis (tetrahedral + E/Z, CIP codes, specified vs unspecified) |
+| `tautomers` | Enumerate tautomers *(see WASM Limitations)* |
+| `atom-map` | Atom mapping: `add` / `remove` / `check` / `list` sub-commands |
 | `schema` | Inspect JSON schemas for any command |
 | `mcp` | Start MCP stdio server |
 | `version` | Show version info |
@@ -115,7 +119,18 @@ rdkit_cli filter --smiles "CCO,CC(=O)Oc1ccccc1C(O)=O" --lipinski
 ```bash
 rdkit_cli draw --smiles "c1ccccc1" --output benzene.svg --format svg
 rdkit_cli draw --smiles "c1ccccc1" --width 400 --height 400 --output large.svg
+
+# Highlight atoms 0 and 1 in red, atom 3 in blue
+rdkit_cli draw --smiles "c1ccccc1" \
+  --highlight-atoms '{"0":"#ff0000","1":"#ff0000","3":"#0000ff"}' \
+  --highlight-radius 0.4
+
+# Highlight bond 1 in green
+rdkit_cli draw --smiles "c1ccccc1" \
+  --highlight-bonds '{"1":"#00ff00"}'
 ```
+
+`--highlight-atoms` and `--highlight-bonds` accept JSON objects mapping index (string) → CSS hex colour. `--highlight-radius` sets the highlight circle size (default 0.3).
 
 ### edit
 
@@ -124,6 +139,117 @@ rdkit_cli edit --smiles "[NH4+].[OH-]" --operation neutralize
 rdkit_cli edit --smiles "CCO" --operation add-h
 rdkit_cli edit --smiles "[H]OCC" --operation remove-h
 rdkit_cli edit --smiles "[CH3:1][OH:2]" --operation strip-maps
+```
+
+### react
+
+Apply a reaction SMIRKS to one or more reactant SMILES and receive the product SMILES.
+
+```bash
+rdkit_cli react --smirks "[C:1][OH]>>[C:1]Br" --reactants "CCO,CCCO"
+# → { "reaction": "...", "reactant_count": 2, "products": [["CCBr"], ["CCCBr"]] }
+```
+
+Reactants can be comma-separated or space-separated (positional args after the flags).
+
+> **WASM note**: requires `get_rxn` / `run_reactants` in the WASM build. If those are absent a `NOT_SUPPORTED_IN_WASM` error is thrown — see [WASM Limitations](#wasm-limitations).
+
+Programmatic:
+```javascript
+const { reactionApply } = require('rdkit_cli');
+const result = await reactionApply({ smirks: '[C:1][OH]>>[C:1]Br', reactants: ['CCO', 'CCCO'] });
+```
+
+### stereo
+
+Analyse stereocentres in a molecule. Reports tetrahedral and E/Z stereocentres with specified/unspecified status and CIP codes when available.
+
+```bash
+rdkit_cli stereo --smiles "CC(O)C(N)C"
+# → { stereo_centers: [...], stereo_center_count: 2, specified_count: 0, has_unspecified_stereo: true }
+
+rdkit_cli stereo --smiles "OC1=CC=CC=C1,CC(F)Cl"  # comma-separated batch
+```
+
+The `--enumerate` flag will attempt to list all stereo isomers. This requires `enumerate_stereocenters` in the WASM build — see [WASM Limitations](#wasm-limitations).
+
+Programmatic:
+```javascript
+const { analyzeStereo } = require('rdkit_cli');
+const result = await analyzeStereo('CC(O)C(N)C');
+```
+
+### tautomers
+
+Enumerate tautomers of a molecule.
+
+```bash
+rdkit_cli tautomers --smiles "OC1=CC=CC=C1" --limit 10
+# → { input_smiles: "...", canonical_tautomer: "Oc1ccccc1", tautomers: [...], count: 3 }
+```
+
+> **WASM note**: `TautomerEnumerator` is **not** available in the standard RDKit WASM build. A `NOT_SUPPORTED_IN_WASM` error will be thrown — see [WASM Limitations](#wasm-limitations).
+
+Programmatic:
+```javascript
+const { enumerateTautomers } = require('rdkit_cli');
+const result = await enumerateTautomers({ smiles: 'OC1=CC=CC=C1', limit: 10 });
+```
+
+### atom-map
+
+Manage atom mapping numbers in SMILES and SMIRKS.
+
+```bash
+# List atom_index → map_number
+rdkit_cli atom-map list --smiles "[CH3:1][CH2:2][OH:3]"
+# → { atom_maps: { "0": 1, "1": 2, "2": 3 }, mapped_atom_count: 3 }
+
+# Add sequential map numbers to all heavy atoms
+rdkit_cli atom-map add --smiles "CCO"
+# → { mapped_smiles: "[CH3:1][CH2:2][OH:3]" }
+
+# Strip all map numbers
+rdkit_cli atom-map remove --smiles "[CH3:1][CH2:2][OH:3]"
+# → { canonical_smiles: "CCO" }
+
+# Validate SMIRKS mapping balance
+rdkit_cli atom-map check --smirks "[C:1][OH:2]>>[C:1]Br"
+# → { valid: true, mapped_atoms: 1, unmapped_atoms: 1, balanced: false, ... }
+```
+
+Programmatic:
+```javascript
+const { atomMapList, atomMapAdd, atomMapRemove, atomMapCheck } = require('rdkit_cli');
+```
+
+## WASM Limitations
+
+Some RDKit features are **not** available in the WebAssembly build (`@rdkit/rdkit`). When these are called, a structured error with `code: "NOT_SUPPORTED_IN_WASM"` is thrown instead of silently failing.
+
+| Feature | Status | Python alternative |
+|---------|--------|-------------------|
+| Reaction application (`react`) | **Available** in @rdkit/rdkit ≥ 2022.03 via `get_rxn` | `AllChem.RunReactants` |
+| Stereo enumeration (`stereo --enumerate`) | **Not available** in standard builds | `EnumerateStereoisomers.EnumerateStereoisomers` |
+| Tautomer enumeration (`tautomers`) | **Not available** in standard builds | `rdMolStandardize.TautomerEnumerator` |
+
+To use these features in Python:
+```python
+from rdkit import Chem
+from rdkit.Chem import AllChem
+from rdkit.Chem.MolStandardize import rdMolStandardize
+from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers
+
+# Reactions
+rxn = AllChem.ReactionFromSmarts('[C:1][OH]>>[C:1]Br')
+products = rxn.RunReactants((Chem.MolFromSmiles('CCO'),))
+
+# Tautomers
+te = rdMolStandardize.TautomerEnumerator()
+tautomers = te.Enumerate(Chem.MolFromSmiles('OC1=CC=CC=C1'))
+
+# Stereo enumeration
+isomers = list(EnumerateStereoisomers(Chem.MolFromSmiles('CC(O)C(N)C')))
 ```
 
 ## Data Files

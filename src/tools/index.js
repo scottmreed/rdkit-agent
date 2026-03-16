@@ -166,6 +166,67 @@ const RDKIT_TOOLS = [
         required: ['smiles']
       }
     }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'apply_reaction',
+      description: 'Apply a reaction SMIRKS to one or more reactant SMILES and return product SMILES. ' +
+        'Requires RDKit WASM with reaction support (get_rxn). ' +
+        'Returns NOT_SUPPORTED_IN_WASM error if the current build lacks reaction chemistry.',
+      parameters: {
+        type: 'object',
+        properties: {
+          smirks: {
+            type: 'string',
+            description: 'Reaction SMIRKS, e.g. "[C:1][OH]>>[C:1]Br"'
+          },
+          reactants: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'List of reactant SMILES to apply the reaction to'
+          }
+        },
+        required: ['smirks', 'reactants']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'analyze_stereochemistry',
+      description: 'Analyse stereocenters in a molecule: tetrahedral chirality, E/Z double bonds, ' +
+        'specified vs unspecified stereo, CIP codes when available.',
+      parameters: {
+        type: 'object',
+        properties: {
+          smiles: { type: 'string', description: 'SMILES string' },
+          molecules: { type: 'array', items: { type: 'string' }, description: 'Multiple SMILES' }
+        },
+        required: ['smiles']
+      }
+    }
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'atom_map_tool',
+      description: 'Add, remove, check, or list atom mapping numbers in a SMILES/SMIRKS. ' +
+        'Subcommands: add (auto-assign), remove (strip all), check (validate SMIRKS mapping), list (atom_idx → map_num).',
+      parameters: {
+        type: 'object',
+        properties: {
+          subcommand: {
+            type: 'string',
+            enum: ['add', 'remove', 'check', 'list'],
+            description: 'Sub-command to run'
+          },
+          smiles: { type: 'string', description: 'SMILES string (for add / remove / list)' },
+          smirks: { type: 'string', description: 'Reaction SMIRKS (for check)' }
+        },
+        required: ['subcommand']
+      }
+    }
   }
 ];
 
@@ -231,6 +292,25 @@ async function handleToolCall(name, args) {
     case 'filter_molecules': {
       const { filter } = require('../commands/filter');
       return filter(args);
+    }
+
+    case 'apply_reaction': {
+      const { reactionApply } = require('../commands/react');
+      return reactionApply(args);
+    }
+
+    case 'analyze_stereochemistry': {
+      const { analyzeStereo } = require('../commands/stereo');
+      if (args.molecules && Array.isArray(args.molecules)) {
+        const results = await Promise.all(args.molecules.map(s => analyzeStereo(s)));
+        return { count: results.length, results };
+      }
+      return analyzeStereo(args.smiles || args.input);
+    }
+
+    case 'atom_map_tool': {
+      const { atomMap } = require('../commands/atom-map');
+      return atomMap(args);
     }
 
     default:

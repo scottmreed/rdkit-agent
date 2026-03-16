@@ -26,6 +26,10 @@ const { draw, drawMolecule } = require('./commands/draw');
 const { stats } = require('./commands/stats');
 const { edit, editMolecule } = require('./commands/edit');
 const { rings, analyzeRings } = require('./commands/rings');
+const { react, reactionApply } = require('./commands/react');
+const { stereo, analyzeStereo } = require('./commands/stereo');
+const { tautomers, enumerateTautomers } = require('./commands/tautomers');
+const { atomMap, atomMapList, atomMapAdd, atomMapRemove, atomMapCheck } = require('./commands/atom-map');
 const { version } = require('./commands/version');
 const { plugin } = require('./commands/plugin');
 const { schemaCmd } = require('./commands/schema-cmd');
@@ -65,6 +69,17 @@ module.exports = {
   editMolecule,
   rings,
   analyzeRings,
+  react,
+  reactionApply,
+  stereo,
+  analyzeStereo,
+  tautomers,
+  enumerateTautomers,
+  atomMap,
+  atomMapList,
+  atomMapAdd,
+  atomMapRemove,
+  atomMapCheck,
   version,
   plugin,
   schemaCmd,

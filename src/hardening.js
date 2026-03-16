@@ -3,12 +3,18 @@
 const path = require('path');
 const fs = require('fs');
 
-// Load alias map from data/aliases.json
-let ALIASES;
-try {
-  ALIASES = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'aliases.json'), 'utf8'));
-} catch (e) {
-  ALIASES = {};
+// Alias map – loaded on first use so commands that never call applyAlias/isEnglishWord
+// (e.g. schema, version) don't pay the readFileSync cost at module load.
+let _aliases = null;
+function getAliases() {
+  if (!_aliases) {
+    try {
+      _aliases = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', 'aliases.json'), 'utf8'));
+    } catch (e) {
+      _aliases = {};
+    }
+  }
+  return _aliases;
 }
 
 // SMILES legal character set
@@ -130,12 +136,13 @@ function checkBrackets(smiles) {
  * Apply alias correction
  */
 function applyAlias(input) {
-  if (ALIASES[input] !== undefined) {
-    return { corrected: true, value: ALIASES[input], alias: input };
+  const aliases = getAliases();
+  if (aliases[input] !== undefined) {
+    return { corrected: true, value: aliases[input], alias: input };
   }
   // Case-insensitive lookup
   const lower = input.toLowerCase();
-  for (const [key, val] of Object.entries(ALIASES)) {
+  for (const [key, val] of Object.entries(aliases)) {
     if (key.toLowerCase() === lower) {
       return { corrected: true, value: val, alias: key };
     }
@@ -151,7 +158,8 @@ function isEnglishWord(input) {
 
   // Check against known chemistry words
   if (CHEMISTRY_ENGLISH_WORDS.has(cleaned)) {
-    return { isWord: true, suggestion: ALIASES[cleaned] || ALIASES[input] || null };
+    const aliases = getAliases();
+    return { isWord: true, suggestion: aliases[cleaned] || aliases[input] || null };
   }
 
   // Consecutive lowercase heuristic: if the whole string is 5+ lowercase letters
@@ -286,5 +294,5 @@ module.exports = {
   checkBrackets,
   isEnglishWord,
   sandboxOutputPath,
-  ALIASES
+  get ALIASES() { return getAliases(); }
 };
