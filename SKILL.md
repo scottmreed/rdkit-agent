@@ -1,3 +1,8 @@
+---
+name: rdkit-agent
+description: Agent-first cheminformatics CLI powered by RDKit WASM for validating, converting, and analyzing chemical notation (SMILES, SMIRKS, InChI)
+---
+
 # rdkit_cli Agent Skill
 
 ## Identity
