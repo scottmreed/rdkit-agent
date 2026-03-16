@@ -1,11 +1,11 @@
-# rdkit_cli
+# rdkit-agent
 
 Agent-first cheminformatics CLI powered by RDKit WASM. Validates, converts, and analyzes chemical notation (SMILES, SMIRKS, InChI) with structured JSON output. Works as a CLI, Node.js library, and MCP server.
 
 ## Installation
 
 ```bash
-npm install -g rdkit_cli
+npm install -g rdkit-agent
 ```
 
 Requires Node.js ≥ 16. No native build steps — RDKit runs as WebAssembly.
@@ -14,16 +14,16 @@ Requires Node.js ≥ 16. No native build steps — RDKit runs as WebAssembly.
 
 ```bash
 # Validate a SMILES string
-rdkit_cli check --smiles "c1ccccc1"
+rdkit-agent check --smiles "c1ccccc1"
 
 # Compute molecular descriptors
-rdkit_cli descriptors --smiles "CCO"
+rdkit-agent descriptors --smiles "CCO"
 
 # Convert SMILES to InChI
-rdkit_cli convert --from smiles --to inchi --input "CCO"
+rdkit-agent convert --from smiles --to inchi --input "CCO"
 
 # Find similar molecules
-rdkit_cli similarity --query "c1ccccc1" --targets "Cc1ccccc1,CCO,c1ccc2ccccc2c1" --threshold 0.5
+rdkit-agent similarity --query "c1ccccc1" --targets "Cc1ccccc1,CCO,c1ccc2ccccc2c1" --threshold 0.5
 ```
 
 Output is JSON when stdout is not a terminal (piped/redirected). Pass `--output json` to force it.
@@ -67,10 +67,10 @@ Output is JSON when stdout is not a terminal (piped/redirected). Pass `--output 
 ### check
 
 ```bash
-rdkit_cli check --smiles "CCO"
-rdkit_cli check --smiles "H2O"          # → corrects alias to "O"
-rdkit_cli check --smirks "[C:1][OH]>>[C:1]=O"
-rdkit_cli check --reactants "CC,OO" --products "CCO,O"
+rdkit-agent check --smiles "CCO"
+rdkit-agent check --smiles "H2O"          # → corrects alias to "O"
+rdkit-agent check --smirks "[C:1][OH]>>[C:1]=O"
+rdkit-agent check --reactants "CC,OO" --products "CCO,O"
 ```
 
 Output keys: `overall_pass`, `summary`, `checks`, `failed_checks`, `fix_suggestions`, `corrected_values`
@@ -78,9 +78,9 @@ Output keys: `overall_pass`, `summary`, `checks`, `failed_checks`, `fix_suggesti
 ### repair-smiles
 
 ```bash
-rdkit_cli repair-smiles --input "C1CC"                   # ring-closure repair
-rdkit_cli repair-smiles --input "H2O"                    # alias/formula repair
-rdkit_cli repair-smiles --json '{"molecules":["C1CC","Na+"]}'
+rdkit-agent repair-smiles --input "C1CC"                   # ring-closure repair
+rdkit-agent repair-smiles --input "H2O"                    # alias/formula repair
+rdkit-agent repair-smiles --json '{"molecules":["C1CC","Na+"]}'
 ```
 
 Output keys: `success`, `canonical_smiles`, `strategy`, `confidence`, `intent`, `attempts`
@@ -88,45 +88,45 @@ Output keys: `success`, `canonical_smiles`, `strategy`, `confidence`, `intent`, 
 ### descriptors
 
 ```bash
-rdkit_cli descriptors --smiles "CCO"
-rdkit_cli descriptors --json '{"molecules":["CCO","c1ccccc1"]}'
-rdkit_cli descriptors --smiles "CCO" --fields "MW,logP,TPSA"
+rdkit-agent descriptors --smiles "CCO"
+rdkit-agent descriptors --json '{"molecules":["CCO","c1ccccc1"]}'
+rdkit-agent descriptors --smiles "CCO" --fields "MW,logP,TPSA"
 ```
 
 ### convert
 
 ```bash
-rdkit_cli convert --from smiles --to inchi --input "CCO"
-rdkit_cli convert --from smiles --to inchikey --input "c1ccccc1"
-rdkit_cli convert --from smiles --to mol --input "CCO"
+rdkit-agent convert --from smiles --to inchi --input "CCO"
+rdkit-agent convert --from smiles --to inchikey --input "c1ccccc1"
+rdkit-agent convert --from smiles --to mol --input "CCO"
 ```
 
 ### similarity
 
 ```bash
-rdkit_cli similarity --query "c1ccccc1" --targets "Cc1ccccc1,CCO" --threshold 0.5 --top 5
+rdkit-agent similarity --query "c1ccccc1" --targets "Cc1ccccc1,CCO" --threshold 0.5 --top 5
 ```
 
 ### filter
 
 ```bash
-rdkit_cli filter --smiles "CCO,CC(=O)Oc1ccccc1C(O)=O" --mw-max 100 --logp-max 3
-rdkit_cli filter --smiles "CCO,CC(=O)Oc1ccccc1C(O)=O" --lipinski
+rdkit-agent filter --smiles "CCO,CC(=O)Oc1ccccc1C(O)=O" --mw-max 100 --logp-max 3
+rdkit-agent filter --smiles "CCO,CC(=O)Oc1ccccc1C(O)=O" --lipinski
 ```
 
 ### draw
 
 ```bash
-rdkit_cli draw --smiles "c1ccccc1" --output benzene.svg --format svg
-rdkit_cli draw --smiles "c1ccccc1" --width 400 --height 400 --output large.svg
+rdkit-agent draw --smiles "c1ccccc1" --output benzene.svg --format svg
+rdkit-agent draw --smiles "c1ccccc1" --width 400 --height 400 --output large.svg
 
 # Highlight atoms 0 and 1 in red, atom 3 in blue
-rdkit_cli draw --smiles "c1ccccc1" \
+rdkit-agent draw --smiles "c1ccccc1" \
   --highlight-atoms '{"0":"#ff0000","1":"#ff0000","3":"#0000ff"}' \
   --highlight-radius 0.4
 
 # Highlight bond 1 in green
-rdkit_cli draw --smiles "c1ccccc1" \
+rdkit-agent draw --smiles "c1ccccc1" \
   --highlight-bonds '{"1":"#00ff00"}'
 ```
 
@@ -135,10 +135,10 @@ rdkit_cli draw --smiles "c1ccccc1" \
 ### edit
 
 ```bash
-rdkit_cli edit --smiles "[NH4+].[OH-]" --operation neutralize
-rdkit_cli edit --smiles "CCO" --operation add-h
-rdkit_cli edit --smiles "[H]OCC" --operation remove-h
-rdkit_cli edit --smiles "[CH3:1][OH:2]" --operation strip-maps
+rdkit-agent edit --smiles "[NH4+].[OH-]" --operation neutralize
+rdkit-agent edit --smiles "CCO" --operation add-h
+rdkit-agent edit --smiles "[H]OCC" --operation remove-h
+rdkit-agent edit --smiles "[CH3:1][OH:2]" --operation strip-maps
 ```
 
 ### react
@@ -146,7 +146,7 @@ rdkit_cli edit --smiles "[CH3:1][OH:2]" --operation strip-maps
 Apply a reaction SMIRKS to one or more reactant SMILES and receive the product SMILES.
 
 ```bash
-rdkit_cli react --smirks "[C:1][OH]>>[C:1]Br" --reactants "CCO,CCCO"
+rdkit-agent react --smirks "[C:1][OH]>>[C:1]Br" --reactants "CCO,CCCO"
 # → { "reaction": "...", "reactant_count": 2, "products": [["CCBr"], ["CCCBr"]] }
 ```
 
@@ -156,7 +156,7 @@ Reactants can be comma-separated or space-separated (positional args after the f
 
 Programmatic:
 ```javascript
-const { reactionApply } = require('rdkit_cli');
+const { reactionApply } = require('rdkit-agent');
 const result = await reactionApply({ smirks: '[C:1][OH]>>[C:1]Br', reactants: ['CCO', 'CCCO'] });
 ```
 
@@ -165,17 +165,17 @@ const result = await reactionApply({ smirks: '[C:1][OH]>>[C:1]Br', reactants: ['
 Analyse stereocentres in a molecule. Reports tetrahedral and E/Z stereocentres with specified/unspecified status and CIP codes when available.
 
 ```bash
-rdkit_cli stereo --smiles "CC(O)C(N)C"
+rdkit-agent stereo --smiles "CC(O)C(N)C"
 # → { stereo_centers: [...], stereo_center_count: 2, specified_count: 0, has_unspecified_stereo: true }
 
-rdkit_cli stereo --smiles "OC1=CC=CC=C1,CC(F)Cl"  # comma-separated batch
+rdkit-agent stereo --smiles "OC1=CC=CC=C1,CC(F)Cl"  # comma-separated batch
 ```
 
 The `--enumerate` flag will attempt to list all stereo isomers. This requires `enumerate_stereocenters` in the WASM build — see [WASM Limitations](#wasm-limitations).
 
 Programmatic:
 ```javascript
-const { analyzeStereo } = require('rdkit_cli');
+const { analyzeStereo } = require('rdkit-agent');
 const result = await analyzeStereo('CC(O)C(N)C');
 ```
 
@@ -184,7 +184,7 @@ const result = await analyzeStereo('CC(O)C(N)C');
 Enumerate tautomers of a molecule.
 
 ```bash
-rdkit_cli tautomers --smiles "OC1=CC=CC=C1" --limit 10
+rdkit-agent tautomers --smiles "OC1=CC=CC=C1" --limit 10
 # → { input_smiles: "...", canonical_tautomer: "Oc1ccccc1", tautomers: [...], count: 3 }
 ```
 
@@ -192,7 +192,7 @@ rdkit_cli tautomers --smiles "OC1=CC=CC=C1" --limit 10
 
 Programmatic:
 ```javascript
-const { enumerateTautomers } = require('rdkit_cli');
+const { enumerateTautomers } = require('rdkit-agent');
 const result = await enumerateTautomers({ smiles: 'OC1=CC=CC=C1', limit: 10 });
 ```
 
@@ -202,25 +202,25 @@ Manage atom mapping numbers in SMILES and SMIRKS.
 
 ```bash
 # List atom_index → map_number
-rdkit_cli atom-map list --smiles "[CH3:1][CH2:2][OH:3]"
+rdkit-agent atom-map list --smiles "[CH3:1][CH2:2][OH:3]"
 # → { atom_maps: { "0": 1, "1": 2, "2": 3 }, mapped_atom_count: 3 }
 
 # Add sequential map numbers to all heavy atoms
-rdkit_cli atom-map add --smiles "CCO"
+rdkit-agent atom-map add --smiles "CCO"
 # → { mapped_smiles: "[CH3:1][CH2:2][OH:3]" }
 
 # Strip all map numbers
-rdkit_cli atom-map remove --smiles "[CH3:1][CH2:2][OH:3]"
+rdkit-agent atom-map remove --smiles "[CH3:1][CH2:2][OH:3]"
 # → { canonical_smiles: "CCO" }
 
 # Validate SMIRKS mapping balance
-rdkit_cli atom-map check --smirks "[C:1][OH:2]>>[C:1]Br"
+rdkit-agent atom-map check --smirks "[C:1][OH:2]>>[C:1]Br"
 # → { valid: true, mapped_atoms: 1, unmapped_atoms: 1, balanced: false, ... }
 ```
 
 Programmatic:
 ```javascript
-const { atomMapList, atomMapAdd, atomMapRemove, atomMapCheck } = require('rdkit_cli');
+const { atomMapList, atomMapAdd, atomMapRemove, atomMapCheck } = require('rdkit-agent');
 ```
 
 ## WASM Limitations
@@ -263,7 +263,7 @@ isomers = list(EnumerateStereoisomers(Chem.MolFromSmiles('CC(O)C(N)C')))
 Start the MCP stdio server to expose all commands as tools:
 
 ```bash
-rdkit_cli mcp
+rdkit-agent mcp
 ```
 
 Add to your Claude Desktop `claude_desktop_config.json`:
@@ -271,8 +271,8 @@ Add to your Claude Desktop `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "rdkit_cli": {
-      "command": "rdkit_cli",
+    "rdkit-agent": {
+      "command": "rdkit-agent",
       "args": ["mcp"]
     }
   }
@@ -282,7 +282,7 @@ Add to your Claude Desktop `claude_desktop_config.json`:
 ## Node.js API
 
 ```javascript
-const { check, descriptors, convert, similarity, RDKIT_TOOLS, handleToolCall } = require('rdkit_cli');
+const { check, descriptors, convert, similarity, RDKIT_TOOLS, handleToolCall } = require('rdkit-agent');
 
 // Always validate before using chemistry strings
 const result = await check({ smiles: 'CCO' });
@@ -308,7 +308,7 @@ const hits = await similarity({
 ### OpenAI Tool Integration
 
 ```javascript
-const { RDKIT_TOOLS, handleToolCall } = require('rdkit_cli');
+const { RDKIT_TOOLS, handleToolCall } = require('rdkit-agent');
 
 const response = await openai.chat.completions.create({
   model: 'gpt-4o',

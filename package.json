@@ -1,6 +1,6 @@
 {
   "name": "rdkit-agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent-first cheminformatics CLI using Node.js + RDKit WASM",
   "license": "MIT",
   "main": "src/index.js",
