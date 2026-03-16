@@ -258,6 +258,22 @@ isomers = list(EnumerateStereoisomers(Chem.MolFromSmiles('CC(O)C(N)C')))
 - `data/fg_patterns.json`: Curated tiered+consuming SMARTS set used by `fg` for stable, low-overlap functional-group assignment.
 - `data/checkmol_smarts_part1.csv`: Broader checkmol-derived SMARTS catalog used by `repair-smiles` intent scoring (ring/chain/FG hint ranking), not by the main `fg` command.
 
+## Claude Code Skill
+
+Install via [skills.sh](https://skills.sh) for use in Claude Code and other supported agents:
+
+```bash
+npx skills add scottmreed/rdkit-agent -g
+```
+
+Or install the Claude Code plugin directly:
+
+```bash
+claude plugin install scottmreed/rdkit-agent
+```
+
+Once installed, Claude will automatically use `rdkit-agent` for cheminformatics tasks and can invoke it via the `/rdkit-agent` skill shortcut. The skill documents critical invariants, WASM speed characteristics (~1 ms warm, no Python runtime required), and all command schemas in agent-optimized format.
+
 ## MCP Server (Claude Desktop)
 
 Start the MCP stdio server to expose all commands as tools:
@@ -334,9 +350,12 @@ for (const toolCall of response.choices[0].message.tool_calls ?? []) {
 | 2 | Usage error (bad arguments, missing input) |
 | 3 | RDKit error (WASM not loaded, molecule parse failure) |
 
-## Agent Use (SKILL.md)
+## Agent Use
 
-For use with AI agents (Claude, GPT, etc.), see [SKILL.md](./SKILL.md) which ships with the package. It documents critical invariants, error patterns, and all command schemas in agent-optimized format.
+Two agent-facing docs ship with the package:
+
+- [SKILL.md](./SKILL.md) — verbose reference: critical invariants, error patterns, all command schemas
+- [skills/rdkit-agent/SKILL.md](./skills/rdkit-agent/SKILL.md) — plugin skill briefing: WASM speed context, command quick-ref, used automatically when installed via `npx skills add scottmreed/rdkit-agent -g`
 
 ## License
 
