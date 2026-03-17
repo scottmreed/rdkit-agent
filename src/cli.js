@@ -22,7 +22,6 @@ const commands = {
   rings: () => require('./commands/rings').rings,
   react: () => require('./commands/react').react,
   stereo: () => require('./commands/stereo').stereo,
-  tautomers: () => require('./commands/tautomers').tautomers,
   'atom-map': () => require('./commands/atom-map').atomMap,
   schema: () => require('./commands/schema-cmd').schemaCmd,
   version: () => require('./commands/version').version,
@@ -80,7 +79,6 @@ Commands:
   rings         Ring system analysis
   react         Apply a reaction SMIRKS to reactant SMILES → product SMILES
   stereo        Analyse stereocenters (tetrahedral & E/Z); --enumerate flag
-  tautomers     Enumerate tautomers of a molecule (WASM limitation: see README)
   atom-map      Atom mapping sub-commands: add | remove | check | list
   schema        Dump JSON Schema for a command
   version       Show version information
@@ -111,7 +109,6 @@ Examples:
   rdkit_cli draw --smiles "c1ccccc1" --highlight-atoms '{"0":"#ff0000","1":"#ff0000"}'
   rdkit_cli react --smirks "[C:1][OH]>>[C:1]Br" --reactants "CCO,CCCO"
   rdkit_cli stereo --smiles "CC(O)C(N)C"
-  rdkit_cli tautomers --smiles "OC1=CC=CC=C1" --limit 10
   rdkit_cli atom-map list --smiles "[CH3:1][CH2:2][OH:3]"
   rdkit_cli atom-map add --smiles "CCO"
   rdkit_cli atom-map remove --smiles "[CH3:1][CH2:2][OH:3]"

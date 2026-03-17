@@ -49,7 +49,6 @@ Output is JSON when stdout is not a terminal (piped/redirected). Pass `--output 
 | `rings` | Ring analysis (count, aromaticity, spiro atoms) |
 | `react` | Apply a reaction SMIRKS to reactant SMILES → product SMILES |
 | `stereo` | Stereocentre analysis (tetrahedral + E/Z, CIP codes, specified vs unspecified) |
-| `tautomers` | Enumerate tautomers *(see WASM Limitations)* |
 | `atom-map` | Atom mapping: `add` / `remove` / `check` / `list` sub-commands |
 | `schema` | Inspect JSON schemas for any command |
 | `mcp` | Start MCP stdio server |
@@ -179,23 +178,6 @@ const { analyzeStereo } = require('rdkit-agent');
 const result = await analyzeStereo('CC(O)C(N)C');
 ```
 
-### tautomers
-
-Enumerate tautomers of a molecule.
-
-```bash
-rdkit-agent tautomers --smiles "OC1=CC=CC=C1" --limit 10
-# → { input_smiles: "...", canonical_tautomer: "Oc1ccccc1", tautomers: [...], count: 3 }
-```
-
-> **WASM note**: `TautomerEnumerator` is **not** available in the standard RDKit WASM build. A `NOT_SUPPORTED_IN_WASM` error will be thrown — see [WASM Limitations](#wasm-limitations).
-
-Programmatic:
-```javascript
-const { enumerateTautomers } = require('rdkit-agent');
-const result = await enumerateTautomers({ smiles: 'OC1=CC=CC=C1', limit: 10 });
-```
-
 ### atom-map
 
 Manage atom mapping numbers in SMILES and SMIRKS.
@@ -231,22 +213,16 @@ Some RDKit features are **not** available in the WebAssembly build (`@rdkit/rdki
 |---------|--------|-------------------|
 | Reaction application (`react`) | **Available** in @rdkit/rdkit ≥ 2022.03 via `get_rxn` | `AllChem.RunReactants` |
 | Stereo enumeration (`stereo --enumerate`) | **Not available** in standard builds | `EnumerateStereoisomers.EnumerateStereoisomers` |
-| Tautomer enumeration (`tautomers`) | **Not available** in standard builds | `rdMolStandardize.TautomerEnumerator` |
 
 To use these features in Python:
 ```python
 from rdkit import Chem
 from rdkit.Chem import AllChem
-from rdkit.Chem.MolStandardize import rdMolStandardize
 from rdkit.Chem.EnumerateStereoisomers import EnumerateStereoisomers
 
 # Reactions
 rxn = AllChem.ReactionFromSmarts('[C:1][OH]>>[C:1]Br')
 products = rxn.RunReactants((Chem.MolFromSmiles('CCO'),))
-
-# Tautomers
-te = rdMolStandardize.TautomerEnumerator()
-tautomers = te.Enumerate(Chem.MolFromSmiles('OC1=CC=CC=C1'))
 
 # Stereo enumeration
 isomers = list(EnumerateStereoisomers(Chem.MolFromSmiles('CC(O)C(N)C')))

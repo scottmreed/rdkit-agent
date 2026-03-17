@@ -5,7 +5,7 @@ description: Agent-first cheminformatics CLI powered by RDKit WASM for validatin
 
 # rdkit-agent Skill
 
-You have access to `rdkit-agent`, an agent-first cheminformatics CLI powered by RDKit compiled to WebAssembly. Use it whenever you need to validate, convert, or analyze chemical notation (SMILES, SMIRKS, InChI).
+Start with `npm install -g rdkit-agent`. Then use the CLI for validating, converting, or analyzing chemical notation (SMILES, SMIRKS, InChI).
 
 ## Why use this instead of Python rdkit
 
@@ -72,7 +72,6 @@ rdkit-agent subsearch --query "[OH]" --targets "..." --limit 10
 | `rings` | `rdkit-agent rings --smiles "c1ccccc1"` |
 | `react` | `rdkit-agent react --smirks "[C:1][OH]>>[C:1]Br" --reactants "CCO"` |
 | `stereo` | `rdkit-agent stereo --smiles "CC(O)C(N)C"` |
-| `tautomers` | `rdkit-agent tautomers --smiles "OC1=CC=CC=C1" --limit 10"` |
 | `atom-map` | `rdkit-agent atom-map add --smiles "CCO"` |
 | `schema` | `rdkit-agent schema check` |
 | `mcp` | `rdkit-agent mcp` (starts MCP stdio server) |
@@ -121,11 +120,10 @@ Use `rdkit-agent repair-smiles` to attempt automatic recovery.
 
 ## WASM Limitations
 
-Two features are unavailable in the standard `@rdkit/rdkit` WASM build. Both return a structured error with `code: "NOT_SUPPORTED_IN_WASM"` rather than silently failing:
+One feature is unavailable in the standard `@rdkit/rdkit` WASM build. It returns a structured error with `code: "NOT_SUPPORTED_IN_WASM"` rather than silently failing:
 
 | Feature | Status |
 |---------|--------|
-| `tautomers` | Not available — use Python `rdMolStandardize.TautomerEnumerator` |
 | `stereo --enumerate` | Not available — use Python `EnumerateStereoisomers` |
 | `react` | Available in `@rdkit/rdkit >= 2022.03` |
 

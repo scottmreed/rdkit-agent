@@ -19,7 +19,6 @@ const { edit } = require('../commands/edit');
 const { rings } = require('../commands/rings');
 const { react } = require('../commands/react');
 const { stereo } = require('../commands/stereo');
-const { tautomers } = require('../commands/tautomers');
 const { atomMap } = require('../commands/atom-map');
 const { version } = require('../commands/version');
 
@@ -225,19 +224,6 @@ const MCP_TOOLS = [
     }
   },
   {
-    name: 'enumerate_tautomers',
-    description: 'Enumerate tautomers of a molecule. ' +
-      'Returns NOT_SUPPORTED_IN_WASM if TautomerEnumerator is not in the current WASM build.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        smiles: { type: 'string' },
-        limit: { type: 'integer', default: 10 }
-      },
-      required: ['smiles']
-    }
-  },
-  {
     name: 'atom_map_tool',
     description: 'Add, remove, check, or list atom mapping numbers. ' +
       'Subcommands: add | remove | check | list',
@@ -278,7 +264,6 @@ async function dispatchMcpTool(name, input) {
     case 'get_version': return version(args);
     case 'apply_reaction': return react(args);
     case 'analyze_stereochemistry': return stereo(args);
-    case 'enumerate_tautomers': return tautomers(args);
     case 'atom_map_tool': return atomMap(args);
     default:
       throw new Error(`Unknown tool: ${name}`);
