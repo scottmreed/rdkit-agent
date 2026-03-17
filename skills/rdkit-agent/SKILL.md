@@ -1,11 +1,33 @@
 ---
 name: rdkit-agent
 description: Agent-first cheminformatics CLI powered by RDKit WASM for validating, converting, and analyzing chemical notation (SMILES, SMIRKS, InChI)
+allowed-tools: Bash(which rdkit-agent), Bash(npm install *), Bash(npx rdkit-agent *), Bash(rdkit-agent *)
 ---
 
 # rdkit-agent Skill
 
-Start with `npm install -g rdkit-agent`. Then use the CLI for validating, converting, or analyzing chemical notation (SMILES, SMIRKS, InChI).
+## Step 0 — Ensure rdkit-agent is available
+
+Before running any command, check whether `rdkit-agent` is on the PATH:
+
+```bash
+which rdkit-agent
+```
+
+- **If found** (`exit 0`): proceed directly to the commands below.
+- **If not found** (`exit 1`): install it into the workspace so the sandbox can reach it:
+
+```bash
+npm install rdkit-agent
+```
+
+Then invoke it via `npx` for the rest of the session (or until a global install is confirmed):
+
+```bash
+npx rdkit-agent version
+```
+
+> **Sandbox note**: `npm install` writes to `node_modules/` inside the current working directory, which is always writable. Network access to the npm registry is allowed by default. No elevated permissions are required. Do not attempt `npm install -g` — a global install writes outside the workspace and will be blocked in most sandboxed environments.
 
 ## Why use this instead of Python rdkit
 
