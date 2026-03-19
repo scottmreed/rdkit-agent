@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "rdkit-agent@rdkit-plugins": true
+  },
+  "extraKnownMarketplaces": {
+    "rdkit-plugins": {
+      "source": {
+        "source": "github",
+        "repo": "scottmreed/rdkit-agent"
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "rdkit-plugins",
+  "owner": {
+    "name": "Scott Reed"
+  },
+  "plugins": [
+    {
+      "name": "rdkit-agent",
+      "source": ".",
+      "description": "Agent-first cheminformatics CLI powered by RDKit WASM. Validates, converts, and analyzes SMILES, SMIRKS, and InChI with structured JSON output."
+    }
+  ]
+}

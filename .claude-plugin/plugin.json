@@ -2,7 +2,7 @@
   "name": "rdkit-agent",
   "version": "0.1.1",
   "description": "Agent-first cheminformatics CLI powered by RDKit WASM. Validates, converts, and analyzes SMILES, SMIRKS, and InChI with structured JSON output.",
-  "author": "Scott Reed",
+  "author": { "name": "Scott Reed" },
   "homepage": "https://github.com/scottmreed/rdkit-agent#readme",
   "repository": "https://github.com/scottmreed/rdkit-agent",
   "license": "MIT",
